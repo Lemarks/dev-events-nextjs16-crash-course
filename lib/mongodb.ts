@@ -3,12 +3,8 @@ import mongoose from 'mongoose';
 // Define the MongoDB connection URI from environment variables
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// Throw an error if MONGODB_URI is not defined
-if (!MONGODB_URI) {
-  throw new Error(
-    'Please define the MONGODB_URI environment variable inside .env.local'
-  );
-}
+// NOTE: Do not throw at module top-level if MONGODB_URI is missing.
+// Validation is performed inside connectDB so imports remain safe in env-less contexts.
 
 // Define the type for our cached connection
 interface MongooseCache {
@@ -43,12 +39,19 @@ async function connectDB(): Promise<typeof mongoose> {
 
   // Return existing promise if connection is in progress
   if (!cached.promise) {
+    // Validate URI right before attempting to connect to fail fast during connection,
+    // while keeping module imports safe when env is not configured.
+    if (!MONGODB_URI) {
+      throw new Error(
+        'Please define the MONGODB_URI environment variable inside .env.local'
+      );
+    }
     const opts = {
       bufferCommands: false, // Disable buffering to fail fast if not connected
     };
 
     // Create a new connection promise
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
       return mongoose;
     });
   }
