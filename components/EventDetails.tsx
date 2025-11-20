@@ -66,7 +66,7 @@ const EventDetails = async ({params}: { params: Promise<string> }) => {
     const bookings = 10
 
     // Cast the result of getSimilarEventsBySlug to IEvent[] because Mongoose .lean() returns plain objects
-    const similarEvents = await getSimilarEventsBySlug(slug) as unknown as IEvent[]
+    const similarEvents: IEvent[] = await getSimilarEventsBySlug(slug);
 
     return (
         <section id="event">
