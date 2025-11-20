@@ -7,9 +7,9 @@ import BookEvent from "@/components/BookEvent";
 import EventCard from "@/components/EventCard";
 import {cacheLife} from "next/cache";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
-const EventDetailItem = ({icon, alt, label}: { icon: string, alt: string, label: string }) => (
+const EventDetailItem = ({icon, alt, label}: { icon: string; alt: string; label: string; }) => (
     <div className="flex-row-gap-2 items-center">
         <Image src={icon} alt={alt} width={17} height={17}/>
         <p>{label}</p>
@@ -21,9 +21,8 @@ const EventAgenda = ({agendaItems}: { agendaItems: string[] }) => (
         <h2>Agenda</h2>
         <ul>
             {agendaItems.map((item) => (
-                    <li key={item}>{item}</li>
-                )
-            )}
+                <li key={item}>{item}</li>
+            ))}
         </ul>
     </div>
 )
@@ -31,41 +30,46 @@ const EventAgenda = ({agendaItems}: { agendaItems: string[] }) => (
 const EventTags = ({tags}: { tags: string[] }) => (
     <div className="flex flex-row gap-1.5 flex-wrap">
         {tags.map((tag) => (
-            <div className={"pill"} key={tag}>{tag}</div>
+            <div className="pill" key={tag}>{tag}</div>
         ))}
     </div>
 )
 
-
 const EventDetails = async ({params}: { params: Promise<string> }) => {
-    'use cache';
-    cacheLife('hours')
+    'use cache'
+    cacheLife('hours');
     const slug = await params;
 
-    const request = await fetch(`${BASE_URL}/api/events/${slug}`);
-    const {data: event} = await request.json();
+    let event;
+    try {
+        const request = await fetch(`${BASE_URL}/api/events/${slug}`, {
+            next: {revalidate: 60}
+        });
 
-    if (!event) return notFound();
+        if (!request.ok) {
+            if (request.status === 404) {
+                return notFound();
+            }
+            throw new Error(`Failed to fetch event: ${request.statusText}`);
+        }
 
-    const {
-        _id,
-        slug: eventSlug,
-        description,
-        image,
-        overview,
-        date,
-        time,
-        location,
-        mode,
-        agenda,
-        audience,
-        tags,
-        organizer
-    } = event;
+        const response = await request.json();
+        event = response.event;
 
-    const bookings = 10
+        if (!event) {
+            return notFound();
+        }
+    } catch (error) {
+        console.error('Error fetching event:', error);
+        return notFound();
+    }
 
-    // Cast the result of getSimilarEventsBySlug to IEvent[] because Mongoose .lean() returns plain objects
+    const {description, image, overview, date, time, location, mode, agenda, audience, tags, organizer} = event;
+
+    if (!description) return notFound();
+
+    const bookings = 10;
+
     const similarEvents: IEvent[] = await getSimilarEventsBySlug(slug);
 
     return (
@@ -76,7 +80,7 @@ const EventDetails = async ({params}: { params: Promise<string> }) => {
             </div>
 
             <div className="details">
-                {/* Left Side - Event Content */}
+                {/*    Left Side - Event Content */}
                 <div className="content">
                     <Image src={image} alt="Event Banner" width={800} height={800} className="banner"/>
 
@@ -103,24 +107,21 @@ const EventDetails = async ({params}: { params: Promise<string> }) => {
                     </section>
 
                     <EventTags tags={tags}/>
-
-
                 </div>
-                {/* Right Side - Event Content */}
+
+                {/*    Right Side - Booking Form */}
                 <aside className="booking">
-                    <div className="sign-up">
+                    <div className="signup-card">
                         <h2>Book Your Spot</h2>
                         {bookings > 0 ? (
                             <p className="text-sm">
                                 Join {bookings} people who have already booked their spot!
                             </p>
                         ) : (
-                            <p className="text-sm">
-                                Be the first to book your spot!
-                            </p>
+                            <p className="text-sm">Be the first to book your spot!</p>
                         )}
 
-                        <BookEvent eventId={_id} slug={eventSlug}/>
+                        <BookEvent eventId={event._id} slug={event.slug}/>
                     </div>
                 </aside>
             </div>
@@ -133,7 +134,6 @@ const EventDetails = async ({params}: { params: Promise<string> }) => {
                     ))}
                 </div>
             </div>
-
         </section>
     )
 }
