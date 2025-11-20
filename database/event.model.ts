@@ -141,8 +141,9 @@ EventSchema.pre('save', function (next) {
   next();
 });
 
-// Create unique index on slug for faster lookups
-EventSchema.index({ slug: 1 }, { unique: true });
+// Note: `slug` already has `unique: true` at the field level.
+// Avoid declaring a duplicate index via `schema.index()` to prevent
+// "Duplicate schema index on { slug: 1 }" warnings.
 
 // Export model, reuse existing model in development to prevent OverwriteModelError
 const Event = models.Event || model<IEvent>('Event', EventSchema);

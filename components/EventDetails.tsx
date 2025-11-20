@@ -54,7 +54,8 @@ const EventDetails = async ({params}: { params: Promise<string> }) => {
         }
 
         const response = await request.json();
-        event = response.event;
+        // API returns the event under `data`, not `event`
+        event = response.data;
 
         if (!event) {
             return notFound();
@@ -70,7 +71,8 @@ const EventDetails = async ({params}: { params: Promise<string> }) => {
 
     const bookings = 10;
 
-    const similarEvents: IEvent[] = await getSimilarEventsBySlug(slug);
+    // `getSimilarEventsBySlug` returns lean objects; cast to IEvent[] for consumption in UI
+    const similarEvents = await getSimilarEventsBySlug(slug) as unknown as IEvent[];
 
     return (
         <section id="event">
