@@ -11,7 +11,7 @@ export type EventItem = {
 };
 
 // Note: Image assets referenced here must exist under /public/images
-// Available images in this project: event1.png ... event6.png, events-full.png
+// Available images in this project: event1.png ... event6.png, event-full.png
 
 export const events: EventItem[] = [
     {
@@ -64,10 +64,12 @@ export const events: EventItem[] = [
     },
     {
         title: "Open Source Summit Europe 2026",
-        image: "/images/events-full.png",
+        image: "/images/event-full.png",
         slug: "oss-summit-eu-2026",
         location: "Vienna, Austria",
         date: "September 16–18, 2026",
         time: "9:00 AM – 6:00 PM CEST",
     },
 ];
+
+export default events;
