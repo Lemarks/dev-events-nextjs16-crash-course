@@ -2,18 +2,18 @@ import {NextRequest, NextResponse} from 'next/server';
 import connectDB from '@/lib/mongodb';
 import {Event} from '@/database';
 
-type RouteParams = {
+interface RouteParams {
     params: Promise<{
         slug: string;
     }>;
-};
+}
 
 /**
  * GET /api/events/[slug]
  * Fetches a single events by its slug
  */
 export async function GET(
-    req: NextRequest,
+    request: NextRequest,
     {params}: RouteParams
 ): Promise<NextResponse> {
     try {
@@ -21,6 +21,7 @@ export async function GET(
         const {slug} = await params;
 
         // Validate slug parameter
+
         if (!slug || typeof slug !== 'string' || slug.trim() === '') {
             return NextResponse.json(
                 {error: 'Slug parameter is required and must be a valid string'},
@@ -34,30 +35,33 @@ export async function GET(
         // Connect to database
         await connectDB();
 
-        // Query event by slug
+        // Query events by slug
         const event = await Event.findOne({slug: sanitizedSlug}).lean();
 
-        // Handle event not found
+        // Handle events not found
         if (!event) {
             return NextResponse.json(
-                {message: `Event with slug "${sanitizedSlug}" not found`},
+                {error: `Event with slug "${sanitizedSlug}" not found`},
                 {status: 404}
             );
         }
 
-        // Return successful response with event data
+        // Return events data
         return NextResponse.json(
-            {message: 'Event fetched successfully', event},
+            {
+                success: true,
+                data: event,
+            },
             {status: 200}
         );
     } catch (error) {
         // Log error for debugging (use proper logging service in production)
-        console.error('Error fetching event by slug:', error);
+        console.error('Error fetching events by slug:', error);
 
         // Handle unexpected errors
         return NextResponse.json(
             {
-                error: 'An unexpected error occurred while fetching the event',
+                error: 'An unexpected error occurred while fetching the events',
                 message: error instanceof Error ? error.message : 'Unknown error',
             },
             {status: 500}

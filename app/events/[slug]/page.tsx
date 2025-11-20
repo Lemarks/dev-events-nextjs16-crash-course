@@ -1,10 +1,10 @@
 import {notFound} from "next/navigation";
 import Image from "next/image";
-import {sendMessage} from "next/dist/client/dev/hot-reloader/pages/websocket";
 import BookEvent from "@/components/BookEvent";
 import {IEvent} from "@/database";
 import {getSimilarEventsBySlug} from "@/lib/actions/event.actions";
 import EventCard from "@/components/EventCard";
+import {cacheLife} from "next/cache";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL
 
@@ -36,25 +36,29 @@ const EventTags = ({tags}: { tags: string[] }) => (
 )
 
 const EventsDetailsPage = async ({params}: { params: Promise<{ slug: string }> }) => {
+    'use cache';
+    cacheLife('hours')
     const {slug} = await params;
     const request = await fetch(`${BASE_URL}/api/events/${slug}`);
-    const {
-        event: {
-            description,
-            image,
-            overview,
-            date,
-            time,
-            location,
-            mode,
-            agenda,
-            audience,
-            tags,
-            organizer
-        }
-    } = await request.json();
+    const {data: event} = await request.json();
 
-    if (!description) return notFound();
+    if (!event) return notFound();
+
+    const {
+        _id,
+        slug: eventSlug,
+        description,
+        image,
+        overview,
+        date,
+        time,
+        location,
+        mode,
+        agenda,
+        audience,
+        tags,
+        organizer
+    } = event;
 
     const bookings = 10
 
@@ -89,7 +93,7 @@ const EventsDetailsPage = async ({params}: { params: Promise<{ slug: string }> }
 
                     <EventAgenda agendaItems={agenda}/>
 
-                    <section className="flex-col-gap- 2">
+                    <section className="flex-col-gap-2">
                         <h2>About the Organizer</h2>
                         <p>{organizer}</p>
                     </section>
@@ -112,7 +116,7 @@ const EventsDetailsPage = async ({params}: { params: Promise<{ slug: string }> }
                             </p>
                         )}
 
-                        <BookEvent/>
+                        <BookEvent eventId={_id} slug={eventSlug}/>
                     </div>
                 </aside>
             </div>
